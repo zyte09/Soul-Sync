@@ -9,7 +9,7 @@ import LoginScreen from './screens/Auth/LoginScreen';
 
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import Toast from 'react-native-toast-message';
-import { toastConfig } from './utils/toastConfig'; // ✅ custom toast theme
+import { toastConfig } from './utils/toastConfig';
 
 export default function App() {
     return (
@@ -27,6 +27,7 @@ function AppWrapper() {
     const [showOnboarding, setShowOnboarding] = useState(true);
 
     useEffect(() => {
+        AsyncStorage.removeItem('hasSeenOnboarding'); // ← force it to show
         const checkOnboarding = async () => {
             const seen = await AsyncStorage.getItem('hasSeenOnboarding');
             if (seen === 'true') {
@@ -43,7 +44,8 @@ function AppWrapper() {
 
     if (authLoading) return null;
 
-    if (!user) return <LoginScreen />;
+    // ✅ Onboarding shown BEFORE login
     if (showOnboarding) return <OnboardingScreen onFinish={handleFinish} />;
+    if (!user) return <LoginScreen />;
     return <TabNavigator />;
 }

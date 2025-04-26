@@ -1,11 +1,13 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import {
     View,
     TextInput,
     Text,
     TouchableOpacity,
     StyleSheet,
-    ActivityIndicator
+    ActivityIndicator,
+    Image,
+    Animated
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import {
@@ -21,7 +23,17 @@ export default function LoginScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [loadingType, setLoadingType] = useState(null); // 'login' | 'signup'
+    const [loadingType, setLoadingType] = useState(null);
+
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true
+        }).start();
+    }, []);
 
     const handleLogin = async () => {
         setLoadingType('login');
@@ -44,16 +56,15 @@ export default function LoginScreen() {
                     message = 'Email or password is incorrect.';
                     break;
             }
+
             Toast.show({
                 type: 'error',
                 text1: 'Login Failed',
                 text2: message,
                 position: 'top',
-                visibilityTime: 2500, // how long to show
-                autoHide: true,
-                topOffset: 80
+                visibilityTime: 2500,
+                autoHide: true
             });
-
         } finally {
             setLoadingType(null);
         }
@@ -77,16 +88,15 @@ export default function LoginScreen() {
                     message = 'Enter a valid email address.';
                     break;
             }
+
             Toast.show({
                 type: 'error',
                 text1: 'Sign Up Failed',
                 text2: message,
                 position: 'top',
-                visibilityTime: 2500, // how long to show
-                autoHide: true,
-                topOffset: 80
+                visibilityTime: 2500,
+                autoHide: true
             });
-
         } finally {
             setLoadingType(null);
         }
@@ -94,6 +104,11 @@ export default function LoginScreen() {
 
     return (
         <View style={styles.container}>
+            <Animated.Image
+                source={require('../../assets/icon.png')}
+                style={[styles.logo, { opacity: fadeAnim }]}
+                resizeMode="contain"
+            />
             <Text style={styles.title}>Welcome to Soul Sync</Text>
 
             <TextInput
@@ -154,14 +169,32 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 30, justifyContent: 'center' },
-    title: { fontSize: 24, fontWeight: 'bold', marginBottom: 30, textAlign: 'center' },
+    container: {
+        flex: 1,
+        padding: 30,
+        justifyContent: 'center',
+        backgroundColor: '#FFF9D7' // soft background
+    },
+    logo: {
+        width: 250,
+        height: 250,
+        alignSelf: 'center',
+        marginBottom: 30
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 30,
+        textAlign: 'center',
+        color: '#3d5149'
+    },
     input: {
         borderWidth: 1,
         borderColor: '#ccc',
         padding: 14,
         borderRadius: 8,
-        marginBottom: 15
+        marginBottom: 15,
+        backgroundColor: '#fff'
     },
     passwordWrapper: {
         flexDirection: 'row',
@@ -170,7 +203,8 @@ const styles = StyleSheet.create({
         borderColor: '#ccc',
         borderRadius: 8,
         paddingRight: 10,
-        marginBottom: 15
+        marginBottom: 15,
+        backgroundColor: '#fff'
     },
     passwordInput: {
         flex: 1,
@@ -182,6 +216,28 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center'
     },
+    loginButton: {
+        backgroundColor: '#7da263',
+        padding: 14,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 10
+    },
+    signUpButton: {
+        backgroundColor: '#dfbb66',
+        padding: 14,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 10
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600'
+    },
+    disabledButton: {
+        opacity: 0.7
+    },
     loadingRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -190,21 +246,6 @@ const styles = StyleSheet.create({
     loadingText: {
         marginLeft: 10,
         fontSize: 14,
-        color: '#5A4FCF'
-    },
-    loginButton: {
-        backgroundColor: '#5A4FCF',
-        padding: 14,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginBottom: 10
-    },
-    signUpButton: {
-        backgroundColor: '#4FCF76',
-        padding: 14,
-        borderRadius: 8,
-        alignItems: 'center'
-    },
-    buttonText: { color: '#fff', fontSize: 16 },
-    disabledButton: { opacity: 0.7 }
+        color: '#3d5149'
+    }
 });

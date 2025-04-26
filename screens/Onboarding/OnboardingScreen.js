@@ -1,6 +1,15 @@
-// screens/Onboarding/OnboardingScreen.js
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    ScrollView,
+    TouchableOpacity,
+    Image,
+    Dimensions
+} from 'react-native';
+
+const screenWidth = Dimensions.get('window').width;
 
 export default function OnboardingScreen({ onFinish }) {
     return (
@@ -11,14 +20,35 @@ export default function OnboardingScreen({ onFinish }) {
             style={styles.container}
         >
             <View style={styles.page}>
+                <Image
+                    source={require('../../assets/icon.png')}
+                    style={styles.logo}
+                    resizeMode="contain"
+                />
                 <Text style={styles.title}>Welcome to Soul Sync</Text>
-                <Text style={styles.text}>A calming mood journal with tarot-inspired prompts.</Text>
+                <Text style={styles.text}>
+                    A calming mood journal with tarot-inspired prompts.
+                </Text>
             </View>
+
             <View style={styles.page}>
+                <Image
+                    source={require('../../assets/icon.png')}
+                    style={styles.logo}
+                    resizeMode="contain"
+                />
                 <Text style={styles.title}>Check In Once a Day</Text>
-                <Text style={styles.text}>Pick your mood and reflect with a gentle card.</Text>
+                <Text style={styles.text}>
+                    Pick your mood and reflect with a gentle card.
+                </Text>
             </View>
+
             <View style={styles.page}>
+                <Image
+                    source={require('../../assets/icon.png')}
+                    style={styles.logo}
+                    resizeMode="contain"
+                />
                 <Text style={styles.title}>Start Syncing</Text>
                 <Text style={styles.text}>Ready to connect with yourself?</Text>
                 <TouchableOpacity style={styles.button} onPress={onFinish}>
@@ -30,21 +60,38 @@ export default function OnboardingScreen({ onFinish }) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
+    container: { flex: 1, backgroundColor: '#f9f3dd' },
     page: {
-        width: 360, // for iPhone sizing — adjust as needed
+        width: screenWidth,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 30
+        padding: 30,
+        backgroundColor: '#FFF9D7'
     },
-    title: { fontSize: 24, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
-    text: { fontSize: 16, textAlign: 'center' },
+    logo: {
+        height: 250,
+        width: 250,
+        marginBottom: 20,
+        marginTop: 20
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        textAlign: 'center',
+        color: '#3d5149'
+    },
+    text: {
+        fontSize: 16,
+        textAlign: 'center',
+        color: '#3d5149'
+    },
     button: {
         marginTop: 20,
-        backgroundColor: '#5A4FCF',
+        backgroundColor: '#7da263',
         paddingVertical: 12,
         paddingHorizontal: 24,
         borderRadius: 10
     },
-    buttonText: { color: '#fff', fontSize: 16 }
+    buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' }
 });
