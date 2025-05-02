@@ -27,6 +27,19 @@ import {
 } from 'firebase/firestore';
 import Toast from 'react-native-toast-message';
 
+const highlightMatch = (text, query) => {
+    if (!query) return <Text>{text}</Text>;
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return parts.map((part, index) => (
+        <Text
+            key={index}
+            style={part.toLowerCase() === query.toLowerCase() ? styles.highlight : {}}
+        >
+            {part}
+        </Text>
+    ));
+};
+
 const CardVaultScreen = () => {
     const { user } = useContext(AuthContext);
     const [entries, setEntries] = useState([]);
@@ -35,6 +48,7 @@ const CardVaultScreen = () => {
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [editedJournal, setEditedJournal] = useState('');
     const [isEditing, setIsEditing] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const undoRef = useRef({});
     const deletedEntryRef = useRef(null);
@@ -138,6 +152,15 @@ const CardVaultScreen = () => {
         }
     };
 
+    const filteredEntries = entries.filter((entry) => {
+        const query = searchQuery.toLowerCase();
+        return (
+            entry.journal?.toLowerCase().includes(query) ||
+            entry.mood?.name?.toLowerCase().includes(query) ||
+            entry.card?.name?.toLowerCase().includes(query)
+        );
+    });
+
     const renderItem = ({ item }) => {
         const moodName = item.mood?.name || '✨ Mindful Moment';
         const cardName = item.card?.name || '';
@@ -148,13 +171,13 @@ const CardVaultScreen = () => {
             <TouchableOpacity onPress={() => openModal(item)}>
                 <View style={styles.entryCard}>
                     <View style={styles.topRow}>
-                        <Text style={styles.moodLabel}>{moodName.toUpperCase()}</Text>
+                        <Text style={styles.moodLabel}>{highlightMatch(moodName.toUpperCase(), searchQuery)}</Text>
                         <TouchableOpacity onPress={() => handleDelete(item)}>
                             <Feather name="trash-2" size={24} color="#999" />
                         </TouchableOpacity>
                     </View>
-                    <Text style={styles.cardTitle}>{cardName}</Text>
-                    <Text numberOfLines={2} style={styles.journalText}>{journal}</Text>
+                    <Text style={styles.cardTitle}>{highlightMatch(cardName, searchQuery)}</Text>
+                    <Text numberOfLines={2} style={styles.journalText}>{highlightMatch(journal, searchQuery)}</Text>
                     <Text style={styles.date}>{date}</Text>
                 </View>
             </TouchableOpacity>
@@ -172,8 +195,28 @@ const CardVaultScreen = () => {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Your Mood Journal</Text>
+
+            <View style={styles.searchWrapper}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search mood, card, or journal..."
+                    placeholderTextColor="#999"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                />
+                {searchQuery.length > 0 && (
+                    <TouchableOpacity
+                        onPress={() => setSearchQuery('')}
+                        style={styles.clearIcon}
+                    >
+                        <Feather name="x" size={24} color="#999" />
+                    </TouchableOpacity>
+                )}
+            </View>
+
+
             <FlatList
-                data={entries}
+                data={filteredEntries}
                 keyExtractor={(item) => item.id}
                 renderItem={renderItem}
                 contentContainerStyle={{ paddingBottom: 80 }}
@@ -258,6 +301,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFF9D7',
         padding: 24,
+
     },
     centered: {
         flex: 1,
@@ -272,6 +316,28 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 50,
         marginBottom: 16,
+    },
+    searchWrapper: {
+        position: 'relative',
+        marginBottom: 16,
+    },
+    searchInput: {
+        backgroundColor: '#fffef0',
+        borderColor: '#d9d9d9',
+        borderWidth: 1.2,
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        fontSize: 15,
+        color: '#3d5149',
+        paddingRight: 36, // space for the X icon
+    },
+    clearIcon: {
+        position: 'absolute',
+        right: 8,
+        top: '35%',
+        transform: [{ translateY: -9 }],
+        padding: 4,
     },
     entryCard: {
         backgroundColor: '#fffef0',
@@ -405,6 +471,12 @@ const styles = StyleSheet.create({
         minHeight: 100,
         textAlignVertical: 'top',
         marginBottom: 16,
+    },
+
+    highlight: {
+        backgroundColor: '#fff3a2',
+        color: '#3d5149',
+        fontWeight: 'bold',
     },
 });
 

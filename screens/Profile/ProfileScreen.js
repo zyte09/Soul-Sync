@@ -34,7 +34,6 @@ export default function ProfileScreen() {
                                 text2: error.message,
                                 position: 'top',
                                 visibilityTime: 2500,
-
                             });
                         }
                     },
@@ -46,27 +45,51 @@ export default function ProfileScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Profile</Text>
+            <Text style={styles.title}>Your Profile</Text>
             <Text style={styles.label}>Logged in as:</Text>
             <Text style={styles.email}>{user?.email || 'Unknown user'}</Text>
 
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Text style={styles.logoutText}>Sign Out</Text>
+                <Text style={styles.logoutText}>Log Out</Text>
             </TouchableOpacity>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 30, justifyContent: 'center', alignItems: 'center' },
-    title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-    label: { fontSize: 16, color: '#555' },
-    email: { fontSize: 16, color: '#333', marginBottom: 40 },
+    container: {
+        flex: 1,
+        backgroundColor: '#FFF9D7',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    title: {
+        fontSize: 26,
+        fontWeight: 'bold',
+        color: '#3d5149',
+        marginBottom: 30,
+    },
+    label: {
+        fontSize: 16,
+        color: '#5f5f5f',
+    },
+    email: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#3d5149',
+        marginBottom: 40,
+    },
     logoutButton: {
         backgroundColor: '#d9534f',
         paddingVertical: 14,
-        paddingHorizontal: 28,
-        borderRadius: 8
+        paddingHorizontal: 32,
+        borderRadius: 12,
+        elevation: 3,
     },
-    logoutText: { color: '#fff', fontSize: 16, fontWeight: '500' }
+    logoutText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });

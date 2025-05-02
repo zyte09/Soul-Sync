@@ -21,10 +21,25 @@ import TarotFlipCard from '../../components/TarotFlipCard';
 const screenWidth = Dimensions.get('window').width;
 const cardWidth = screenWidth / 2.3;
 
+const dailyPrompts = [
+    "What emotion did you ignore this week?",
+    "What are you grateful for right now?",
+    "What thought keeps repeating lately?",
+    "How would you describe today in one word?",
+];
+
+const dailyQuotes = [
+    "Today, I allow myself to feel fully and write freely.",
+    "My emotions are valid, my voice matters.",
+    "A calm mind brings clarity.",
+    "Every entry brings me closer to understanding myself."
+];
+
 export default function HomeScreen() {
     const [card, setCard] = useState(null);
     const [selectedMood, setSelectedMood] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [moodHistory, setMoodHistory] = useState([]);
     const navigation = useNavigation();
 
     const shuffledMoodCards = useMemo(() => {
@@ -41,9 +56,11 @@ export default function HomeScreen() {
             try {
                 const storedCard = await AsyncStorage.getItem('todaysCard');
                 const storedMood = await AsyncStorage.getItem('selectedMood');
+                const storedHistory = await AsyncStorage.getItem('moodHistory');
 
                 if (storedCard) setCard(JSON.parse(storedCard));
                 if (storedMood) setSelectedMood(JSON.parse(storedMood));
+                if (storedHistory) setMoodHistory(JSON.parse(storedHistory));
 
                 if (!storedCard) {
                     const random = moodCards[Math.floor(Math.random() * moodCards.length)];
@@ -67,26 +84,30 @@ export default function HomeScreen() {
         const today = new Date().toISOString().split('T')[0];
         const entry = { name: mood.name, date: today };
 
-        const stored = await AsyncStorage.getItem('moodHistory');
-        const history = stored ? JSON.parse(stored) : [];
-
-        const alreadyLogged = history.find((m) => m.date === today);
+        const alreadyLogged = moodHistory.find((m) => m.date === today);
         if (!alreadyLogged) {
-            await AsyncStorage.setItem('moodHistory', JSON.stringify([entry, ...history]));
+            const updated = [entry, ...moodHistory];
+            setMoodHistory(updated);
+            await AsyncStorage.setItem('moodHistory', JSON.stringify(updated));
         }
 
-        navigation.navigate('JournalEntryScreen', {
-            mood,
-            card,
-        });
+        navigation.navigate('JournalEntryScreen', { mood, card });
     };
 
     const handleWriteNow = () => {
-        navigation.navigate('JournalEntryScreen', {
-            mood: null,
-            card: card,
-        });
+        navigation.navigate('JournalEntryScreen', { mood: null, card });
     };
+
+    const today = new Date().getDay();
+    const quote = dailyQuotes[today % dailyQuotes.length];
+    const prompt = dailyPrompts[today % dailyPrompts.length];
+
+    const weeklyEntries = moodHistory.filter(entry => {
+        const date = new Date(entry.date);
+        const now = new Date();
+        const diff = (now - date) / (1000 * 60 * 60 * 24);
+        return diff <= 7;
+    });
 
     if (loading) {
         return (
@@ -101,16 +122,12 @@ export default function HomeScreen() {
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style={styles.container}>
                 <Text style={styles.header}>Today's Card</Text>
+                {card && <View style={styles.cardContainer}><TarotFlipCard card={card} /></View>}
 
-                {card && (
-                    <View style={styles.cardContainer}>
-                        <TarotFlipCard card={card} />
-                    </View>
-                )}
+                <Text style={styles.quote}>{quote}</Text>
 
                 <View style={styles.carouselSection}>
                     <Text style={styles.sectionTitle}>How are you feeling today?</Text>
-
                     <FlatList
                         data={shuffledMoodCards}
                         keyExtractor={(item) => item.name}
@@ -124,30 +141,31 @@ export default function HomeScreen() {
                             const isSelected = selectedMood?.name === item.name;
                             return (
                                 <TouchableOpacity
-                                    style={[
-                                        styles.moodCard,
-                                        { width: cardWidth },
-                                        isSelected && styles.moodCardSelected,
-                                    ]}
+                                    style={[styles.moodCard, { width: cardWidth }, isSelected && styles.moodCardSelected]}
                                     onPress={() => handleSelectMood(item)}
                                 >
-                                    <Image
-                                        source={item.image}
-                                        style={styles.moodImage}
-                                        resizeMode="contain"
-                                    />
+                                    <Image source={item.image} style={styles.moodImage} resizeMode="contain" />
                                 </TouchableOpacity>
                             );
                         }}
                     />
                 </View>
 
-                {/* Journal Section */}
+                <View style={styles.promptSection}>
+                    <Text style={styles.promptLabel}>Journal Prompt</Text>
+                    <Text style={styles.promptText}>{prompt}</Text>
+                </View>
+
                 <View style={styles.journalSection}>
                     <Text style={styles.journalLabel}>Journal</Text>
                     <TouchableOpacity style={styles.writeNowButton} onPress={handleWriteNow}>
                         <Text style={styles.writeNowText}>📝 Write Now</Text>
                     </TouchableOpacity>
+                </View>
+
+                <View style={styles.summarySection}>
+                    <Text style={styles.summaryTitle}>This Week’s Mood Summary</Text>
+                    <Text style={styles.summaryText}>📅 {weeklyEntries.length} entries logged this week</Text>
                 </View>
             </View>
         </ScrollView>
@@ -163,7 +181,6 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 24,
         backgroundColor: '#FFF9D7',
-        justifyContent: 'flex-start',
     },
     centered: {
         flex: 1,
@@ -175,21 +192,19 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: 'bold',
         textAlign: 'center',
+        color: '#3d5149',
         marginBottom: 20,
         marginTop: Platform.OS === 'android' ? 36 : 0,
-        color: '#3d5149',
     },
     cardContainer: {
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: 16,
     },
-    loadingText: {
-        marginTop: 10,
-        fontSize: 16,
-        color: '#3d5149',
-    },
-    carouselSection: {
-        marginTop: 12,
+    quote: {
+        fontStyle: 'italic',
+        textAlign: 'center',
+        color: '#5f5f5f',
+        marginBottom: 16,
     },
     sectionTitle: {
         fontSize: 18,
@@ -197,6 +212,11 @@ const styles = StyleSheet.create({
         color: '#3d5149',
         marginBottom: 12,
         textAlign: 'center',
+    },
+    carouselSection: {
+        marginTop: 12,
+        marginBottom: 24,
+
     },
     moodCard: {
         marginRight: 16,
@@ -212,8 +232,8 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowRadius: 4,
         padding: 8,
-        marginBottom: 16,
         marginTop: 8,
+        marginBottom: 16,
     },
     moodCardSelected: {
         elevation: 6,
@@ -228,10 +248,11 @@ const styles = StyleSheet.create({
     },
     journalSection: {
         alignItems: 'center',
-        marginTop: 28,
+        marginTop: 16,
+        marginBottom: 24,
     },
     journalLabel: {
-        fontSize: 20,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#3d5149',
         marginBottom: 10,
@@ -239,17 +260,51 @@ const styles = StyleSheet.create({
     writeNowButton: {
         backgroundColor: '#7da263',
         paddingVertical: 12,
-        paddingHorizontal: 28,
+        paddingHorizontal: 24,
         borderRadius: 32,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
         elevation: 4,
     },
     writeNowText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+    },
+    promptSection: {
+        marginVertical: 16,
+        paddingHorizontal: 12,
+        backgroundColor: '#FFF8D0',
+        elevation: 3,
+        borderRadius: 24,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        padding: 16,
+        opacity: 1,
+    },
+    promptLabel: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 6,
+        color: '#3d5149',
+    },
+    promptText: {
+        fontSize: 15,
+        color: '#5f5f5f',
+        fontStyle: 'italic',
+    },
+    summarySection: {
+        marginTop: 16,
+        alignItems: 'center',
+    },
+    summaryTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#3d5149',
+        marginBottom: 6,
+    },
+    summaryText: {
+        fontSize: 16,
+        color: '#5f5f5f',
     },
 });
