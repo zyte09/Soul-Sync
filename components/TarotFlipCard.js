@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
     Animated,
     StyleSheet,
@@ -7,27 +7,80 @@ import {
     Pressable,
     Easing,
 } from 'react-native';
+import { Audio } from 'expo-av';
 import { cardImages, cardBackImages } from '../data/cardImages';
 
 export default function TarotFlipCard({ card }) {
     const flipAnim = useRef(new Animated.Value(0)).current;
+    const timeoutRef = useRef(null);
+    const [isFlipped, setIsFlipped] = useState(false);
+    const soundRef = useRef(null);
+
+    useEffect(() => {
+        const loadSound = async () => {
+            try {
+                const { sound } = await Audio.Sound.createAsync(
+                    require('../assets/sounds/flip.mp3')
+                );
+                soundRef.current = sound;
+            } catch (error) {
+                console.warn('❌ Error preloading sound:', error);
+            }
+        };
+
+        loadSound();
+
+        return () => {
+            if (soundRef.current) {
+                soundRef.current.unloadAsync(); // ✅ Clean up
+            }
+        };
+    }, []);
+
+    const playFlipSound = async () => {
+        try {
+            if (soundRef.current) {
+                await soundRef.current.replayAsync();
+            }
+        } catch (error) {
+            console.warn('❌ Error playing sound:', error);
+        }
+    };
 
     const flipToBack = () => {
+        playFlipSound();
         Animated.timing(flipAnim, {
             toValue: 1,
             duration: 600,
             easing: Easing.out(Easing.ease),
             useNativeDriver: true,
-        }).start();
+        }).start(() => {
+            setIsFlipped(true);
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            timeoutRef.current = setTimeout(() => {
+                flipToFront();
+            }, 5000);
+        });
     };
 
     const flipToFront = () => {
+        playFlipSound();
         Animated.timing(flipAnim, {
             toValue: 0,
             duration: 600,
             easing: Easing.out(Easing.ease),
             useNativeDriver: true,
-        }).start();
+        }).start(() => {
+            setIsFlipped(false);
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+        });
+    };
+
+    const handlePress = () => {
+        isFlipped ? flipToFront() : flipToBack();
     };
 
     const frontInterpolate = flipAnim.interpolate({
@@ -45,35 +98,13 @@ export default function TarotFlipCard({ card }) {
 
     return (
         <View style={styles.wrapper}>
-            <Pressable onPressIn={flipToBack} onPressOut={flipToFront}>
+            <Pressable onPress={handlePress}>
                 <View style={styles.cardStack}>
-                    {/* Front */}
-                    <Animated.View
-                        style={[
-                            styles.card,
-                            { transform: [{ rotateY: frontInterpolate }] },
-                        ]}
-                    >
-                        <Image
-                            source={frontImage}
-                            style={styles.image}
-                            resizeMode="cover"
-                        />
+                    <Animated.View style={[styles.card, { transform: [{ rotateY: frontInterpolate }] }]}>
+                        <Image source={frontImage} style={styles.image} resizeMode="cover" />
                     </Animated.View>
-
-                    {/* Back */}
-                    <Animated.View
-                        style={[
-                            styles.card,
-                            styles.back,
-                            { transform: [{ rotateY: backInterpolate }] },
-                        ]}
-                    >
-                        <Image
-                            source={backImage}
-                            style={styles.image}
-                            resizeMode="cover"
-                        />
+                    <Animated.View style={[styles.card, styles.back, { transform: [{ rotateY: backInterpolate }] }]}>
+                        <Image source={backImage} style={styles.image} resizeMode="cover" />
                     </Animated.View>
                 </View>
             </Pressable>
