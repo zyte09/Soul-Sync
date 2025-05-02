@@ -1,24 +1,21 @@
 // firebase/saveEntry.js
 import { db } from './firebaseConfig';
-import { ref, push, set } from 'firebase/database';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export const saveMoodEntry = async (user, mood, card, journalText) => {
     if (!user) return;
-    const userId = user.uid;
 
     try {
-        const entryRef = ref(db, `users/${userId}/entries`);
-        const newEntryRef = push(entryRef);
-
-        await set(newEntryRef, {
+        const entriesRef = collection(db, 'users', user.uid, 'entries');
+        await addDoc(entriesRef, {
             mood,
             card,
             journal: journalText || '',
-            timestamp: new Date().toISOString()
+            timestamp: serverTimestamp(),
         });
 
-        console.log('Mood entry saved!');
+        console.log('✅ Mood entry saved to Firestore!');
     } catch (error) {
-        console.error('Save error:', error);
+        console.error('❌ Error saving mood entry:', error);
     }
 };

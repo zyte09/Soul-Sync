@@ -1,23 +1,18 @@
-// firebase/getEntries.js
 import { db } from './firebaseConfig';
-import { ref, onValue } from 'firebase/database';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 
 export const fetchMoodEntries = (user, callback) => {
     if (!user) return;
     const userId = user.uid;
 
-    const entriesRef = ref(db, `users/${userId}/entries`);
+    const entriesRef = collection(db, 'users', userId, 'entries');
+    const q = query(entriesRef, orderBy('timestamp', 'desc'));
 
-    onValue(entriesRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            const formatted = Object.entries(data).map(([id, entry]) => ({
-                id,
-                ...entry,
-            }));
-            callback(formatted.reverse());
-        } else {
-            callback([]);
-        }
+    return onSnapshot(q, (snapshot) => {
+        const entries = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        callback(entries);
     });
 };

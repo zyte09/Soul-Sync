@@ -55,6 +55,7 @@ export default function HomeScreen() {
                 setLoading(false);
             }
         };
+
         loadData();
     }, []);
 
@@ -73,7 +74,10 @@ export default function HomeScreen() {
             await AsyncStorage.setItem('moodHistory', JSON.stringify([entry, ...history]));
         }
 
-        navigation.navigate('JournalEntryScreen');
+        navigation.navigate('JournalEntryScreen', {
+            mood,
+            card,
+        });
     };
 
     if (loading) {

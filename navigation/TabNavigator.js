@@ -11,6 +11,7 @@ const Tab = createBottomTabNavigator();
 export default function TabNavigator() {
     return (
         <Tab.Navigator
+            initialRouteName="Home"
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarActiveTintColor: '#5A4FCF',
@@ -19,8 +20,10 @@ export default function TabNavigator() {
                     paddingBottom: 5,
                     paddingTop: 5,
                     height: 60,
+                    backgroundColor: '#fffef0',
+                    borderTopColor: '#ddd',
                 },
-                tabBarIcon: ({ focused, color, size }) => {
+                tabBarIcon: ({ color, size }) => {
                     let iconName;
 
                     if (route.name === 'Home') iconName = 'home';
@@ -28,7 +31,7 @@ export default function TabNavigator() {
                     else if (route.name === 'Profile') iconName = 'user';
 
                     return <Feather name={iconName} size={size} color={color} />;
-                }
+                },
             })}
         >
             <Tab.Screen name="Home" component={HomeScreen} />

@@ -1,145 +1,115 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import {
     View,
     Text,
     TextInput,
     StyleSheet,
     TouchableOpacity,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Alert,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { AuthContext } from '../../context/AuthContext';
+import { saveMoodEntry } from '../../firebase/saveEntry';
 
-export default function JournalEntryScreen() {
-    const [entry, setEntry] = useState('');
-    const [selectedMood, setSelectedMood] = useState(null);
-    const navigation = useNavigation();
+const JournalEntryScreen = ({ route, navigation }) => {
+    const { mood, card } = route.params;
+    const { user } = useContext(AuthContext);
+    const [journalText, setJournalText] = useState('');
 
-    useEffect(() => {
-        const getMood = async () => {
-            const stored = await AsyncStorage.getItem('selectedMood');
-            if (stored) setSelectedMood(JSON.parse(stored));
-        };
-        getMood();
-    }, []);
+    const handleSave = async () => {
+        if (!user) return;
 
-    const saveEntry = async () => {
-        const today = new Date().toISOString().split('T')[0];
-        const journalEntry = { mood: selectedMood?.name, date: today, entry };
+        await saveMoodEntry(user, mood, card, journalText);
 
-        const stored = await AsyncStorage.getItem('journalEntries');
-        const allEntries = stored ? JSON.parse(stored) : [];
-
-        await AsyncStorage.setItem(
-            'journalEntries',
-            JSON.stringify([journalEntry, ...allEntries])
-        );
-
-        setEntry('');
-
-        Alert.alert('Saved', 'Your journal entry has been saved.', [
-            {
-                text: 'OK',
-                onPress: () => navigation.navigate('Main', { screen: 'Home' }),
-            },
-        ]);
+        navigation.navigate('Main', {
+            screen: 'Vault',
+        });
     };
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-            <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-                <Text style={styles.title}>{selectedMood?.name}</Text>
-                <Text style={styles.subtitle}>{selectedMood?.meaning}</Text>
+        <View style={styles.container}>
+            <Text style={[styles.moodName, { color: '#7da263' }]}>{mood?.name}</Text>
+            <Text style={styles.moodDescription}>{mood?.meaning}</Text>
 
-                <TextInput
-                    style={styles.input}
-                    multiline
-                    placeholder="Write your thoughts here..."
-                    value={entry}
-                    onChangeText={setEntry}
-                />
+            <TextInput
+                style={styles.input}
+                multiline
+                placeholder="Write your thoughts here..."
+                value={journalText}
+                onChangeText={setJournalText}
+                placeholderTextColor="#a1a1a1"
+            />
 
-                <TouchableOpacity style={styles.button} onPress={saveEntry}>
-                    <Text style={styles.buttonText}>Save Entry</Text>
-                </TouchableOpacity>
+            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                <Text style={styles.saveButtonText}>Save Entry</Text>
+            </TouchableOpacity>
 
-                <Text style={styles.quote}>
-                    “Even the softest emotions deserve to be heard.”
-                </Text>
+            <Text style={styles.quote}>
+                “Even the softest emotions deserve to be heard.”
+            </Text>
 
-                <TouchableOpacity
-                    onPress={() => navigation.navigate('Vault')}
-                    style={styles.linkContainer}
-                >
-                    <Text style={styles.link}>View Entries →</Text>
-                </TouchableOpacity>
-            </ScrollView>
-        </KeyboardAvoidingView>
+            <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'Vault' })}>
+                <Text style={styles.viewEntries}>View Entries →</Text>
+            </TouchableOpacity>
+        </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
         backgroundColor: '#FFF9D7',
         padding: 24,
-        flexGrow: 1,
-        justifyContent: 'flex-start',
     },
-    title: {
-        fontSize: 26,
+    moodName: {
+        fontSize: 24,
         fontWeight: 'bold',
-        color: '#7da263',
         textAlign: 'center',
-        marginBottom: 8,
+        marginBottom: 6,
     },
-    subtitle: {
-        fontSize: 16,
+    moodDescription: {
+        fontSize: 15,
+        color: '#5f5f5f',
         textAlign: 'center',
-        color: '#3d5149',
-        marginBottom: 24,
+        marginBottom: 20,
     },
     input: {
-        height: 240,
         backgroundColor: '#fffef0',
-        padding: 16,
         borderRadius: 16,
-        textAlignVertical: 'top',
+        padding: 18,
         fontSize: 16,
-        color: '#3d5149',
+        height: 240,
+        minHeight: 260,
+        borderWidth: 1.5,
         borderColor: '#dfbb66',
-        borderWidth: 1,
+        textAlignVertical: 'top',
+        color: '#3d5149',
     },
-    button: {
-        marginTop: 24,
+    saveButton: {
+        marginTop: 20,
         backgroundColor: '#7da263',
         paddingVertical: 14,
-        borderRadius: 16,
+        borderRadius: 14,
         alignItems: 'center',
+        elevation: 3,
     },
-    buttonText: {
-        color: '#fffef0',
-        fontSize: 16,
+    saveButtonText: {
+        color: '#fff',
         fontWeight: 'bold',
+        fontSize: 16,
     },
     quote: {
         marginTop: 24,
-        fontStyle: 'italic',
-        color: '#555',
         fontSize: 14,
+        color: '#5f5f5f',
+        fontStyle: 'italic',
         textAlign: 'center',
     },
-    linkContainer: {
+    viewEntries: {
         marginTop: 12,
-        alignItems: 'center',
-    },
-    link: {
+        textAlign: 'center',
+        fontSize: 14,
         color: '#5b8f4b',
-        fontWeight: '600',
+        fontWeight: 'bold',
     },
 });
+
+export default JournalEntryScreen;
