@@ -1,75 +1,76 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
-import CardModal from '../../components/CardModal';
-import { AuthContext } from '../../context/AuthContext';
-import { saveMoodEntry } from '../../firebase/saveEntry';
-
-const MOODS = ['happy', 'anxious', 'calm', 'sad', 'tired'];
-
-const CARD_MESSAGES = {
-    happy: { title: 'The Sunbeam', message: 'Let your joy warm others today.' },
-    anxious: { title: 'The Anchor', message: 'Ground yourself. Breathe.' },
-    calm: { title: 'The Mirror', message: 'Reflect on your peace. It’s a gift.' },
-    sad: { title: 'The Rainfall', message: 'Feel it. Then let it pass through.' },
-    tired: { title: 'The Ember', message: 'Rest, but keep the flame alive.' },
-};
+import React from 'react';
+import {
+    View,
+    Text,
+    FlatList,
+    TouchableOpacity,
+    Image,
+    StyleSheet,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import { moodCards } from '../../data/moodCards';
 
 export default function MoodSelectionScreen() {
-    const [selectedMood, setSelectedMood] = useState(null);
-    const [showCard, setShowCard] = useState(false);
-    const { user } = useContext(AuthContext);
+    const navigation = useNavigation();
 
-    const handleMoodSelect = (mood) => {
-        setSelectedMood(mood);
-        setShowCard(true);
-    };
-
-    const handleSave = async () => {
-        if (!user || !selectedMood) return;
-        const card = CARD_MESSAGES[selectedMood];
-        await saveMoodEntry(user, selectedMood, card, '');
-        setShowCard(false);
-        setSelectedMood(null);
+    const handleMoodSelect = async (mood) => {
+        await AsyncStorage.setItem('selectedMood', JSON.stringify(mood));
+        navigation.navigate('JournalEntryScreen'); // 👈 go to Journal after selection
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.heading}>How are you feeling today?</Text>
-            <View style={styles.moodContainer}>
-                {MOODS.map((mood) => (
+            <Text style={styles.title}>How are you feeling today?</Text>
+            <FlatList
+                data={moodCards}
+                keyExtractor={(item) => item.name}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 16 }}
+                renderItem={({ item }) => (
                     <TouchableOpacity
-                        key={mood}
-                        style={styles.moodButton}
-                        onPress={() => handleMoodSelect(mood)}
+                        style={styles.moodCard}
+                        onPress={() => handleMoodSelect(item)}
                     >
-                        <Text style={styles.moodText}>{mood}</Text>
+                        <Image
+                            source={item.image}
+                            style={styles.moodImage}
+                            resizeMode="contain"
+                        />
+                        <Text style={styles.moodLabel}>{item.name}</Text>
                     </TouchableOpacity>
-                ))}
-            </View>
-
-            <Modal visible={showCard} transparent={true} animationType="slide">
-                <CardModal
-                    mood={selectedMood}
-                    card={CARD_MESSAGES[selectedMood]}
-                    onClose={() => setShowCard(false)}
-                    onSave={handleSave}
-                />
-            </Modal>
+                )}
+            />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-    heading: { fontSize: 22, fontWeight: '600', marginBottom: 30 },
-    moodContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
-    moodButton: {
-        backgroundColor: '#f0f0f0',
-        borderRadius: 12,
-        padding: 15,
-        margin: 8,
-        minWidth: 80,
+    container: {
+        flex: 1,
+        backgroundColor: '#FFF9D7',
+        paddingTop: 48,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        color: '#3d5149',
+        marginBottom: 24,
+    },
+    moodCard: {
+        marginRight: 16,
         alignItems: 'center',
     },
-    moodText: { fontSize: 16 }
+    moodImage: {
+        width: 100,
+        height: 100,
+        marginBottom: 8,
+    },
+    moodLabel: {
+        fontSize: 16,
+        color: '#3d5149',
+        fontWeight: '500',
+    },
 });

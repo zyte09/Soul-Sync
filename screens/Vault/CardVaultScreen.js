@@ -7,7 +7,7 @@ export default function CardVaultScreen() {
     const [entries, setEntries] = useState([]);
 
     useEffect(() => {
-        fetchMoodEntries('guest-user', setEntries); // replace with auth user later
+        fetchMoodEntries('guest-user', setEntries);
     }, []);
 
     const renderItem = ({ item }) => (

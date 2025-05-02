@@ -6,6 +6,7 @@ import {
     StyleSheet,
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import TabNavigator from './navigation/TabNavigator';
@@ -15,6 +16,11 @@ import LoginScreen from './screens/Auth/LoginScreen';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './utils/toastConfig';
+
+import MoodSelectionScreen from './screens/Home/MoodSelectionScreen';
+import JournalEntryScreen from './screens/Home/JournalEntryScreen';
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
     return (
@@ -63,7 +69,34 @@ function AppWrapper() {
         return <LoginScreen />;
     }
 
-    return <TabNavigator />;
+    return (
+        <Stack.Navigator>
+            <Stack.Screen
+                name="Main"
+                component={TabNavigator}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="MoodSelectionScreen"
+                component={MoodSelectionScreen}
+                options={{ title: 'How Are You Feeling?' }}
+            />
+            <Stack.Screen
+                name="JournalEntryScreen"
+                component={JournalEntryScreen}
+                options={{
+                    title: '📝 Write About It',
+                    headerStyle: { backgroundColor: '#FFF9D7' },
+                    headerTitleStyle: {
+                        fontWeight: 'bold',
+                        fontSize: 18,
+                        color: '#3d5149',
+                    },
+                    headerTintColor: '#3d5149',
+                }}
+            />
+        </Stack.Navigator>
+    );
 }
 
 const styles = StyleSheet.create({

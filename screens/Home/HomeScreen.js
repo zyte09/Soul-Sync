@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -7,14 +7,27 @@ import {
     Image,
     FlatList,
     TouchableOpacity,
+    Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import { moodCards } from '../../data/moodCards';
 
 export default function HomeScreen() {
     const [card, setCard] = useState(null);
     const [selectedMood, setSelectedMood] = useState(null);
     const [loading, setLoading] = useState(true);
+    const navigation = useNavigation();
+
+    // 🔀 Shuffle moodCards once when component mounts
+    const shuffledMoodCards = useMemo(() => {
+        const shuffled = [...moodCards];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }, []);
 
     useEffect(() => {
         const loadData = async () => {
@@ -40,6 +53,19 @@ export default function HomeScreen() {
     const handleSelectMood = async (mood) => {
         setSelectedMood(mood);
         await AsyncStorage.setItem('selectedMood', JSON.stringify(mood));
+
+        const today = new Date().toISOString().split('T')[0];
+        const entry = { name: mood.name, date: today };
+
+        const stored = await AsyncStorage.getItem('moodHistory');
+        const history = stored ? JSON.parse(stored) : [];
+
+        const alreadyLogged = history.find((m) => m.date === today);
+        if (!alreadyLogged) {
+            await AsyncStorage.setItem('moodHistory', JSON.stringify([entry, ...history]));
+        }
+
+        navigation.navigate('JournalEntryScreen');
     };
 
     if (loading) {
@@ -57,11 +83,7 @@ export default function HomeScreen() {
 
             {card && (
                 <View style={styles.cardContainer}>
-                    <Image
-                        source={card.image}
-                        style={styles.cardImage}
-                        resizeMode="contain"
-                    />
+                    <Image source={card.image} style={styles.cardImage} resizeMode="contain" />
                     <Text style={styles.cardName}>{card.name}</Text>
                     <Text style={styles.cardMeaning}>{card.meaning}</Text>
                 </View>
@@ -70,19 +92,19 @@ export default function HomeScreen() {
             <View style={styles.carouselSection}>
                 <Text style={styles.sectionTitle}>How are you feeling today?</Text>
                 <FlatList
-                    data={moodCards}
+                    data={shuffledMoodCards}
                     keyExtractor={(item) => item.name}
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 8 }}
+                    contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 16 }}
+                    snapToAlignment="center"
+                    decelerationRate="fast"
+                    snapToInterval={Platform.OS === 'ios' ? 160 : 150}
                     renderItem={({ item }) => {
                         const isSelected = selectedMood?.name === item.name;
                         return (
                             <TouchableOpacity
-                                style={[
-                                    styles.moodCard,
-                                    isSelected && styles.moodCardSelected,
-                                ]}
+                                style={[styles.moodCard, isSelected && styles.moodCardSelected]}
                                 onPress={() => handleSelectMood(item)}
                             >
                                 <Image
@@ -117,6 +139,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 20,
+        marginTop: Platform.OS === 'android' ? 36 : 0,
         color: '#3d5149',
     },
     cardContainer: {
@@ -157,10 +180,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#3d5149',
     },
-    // Mood Carousel
     carouselSection: {
         marginTop: 12,
-        marginBottom: 24,
+        marginBottom: 40,
     },
     sectionTitle: {
         fontSize: 18,
@@ -195,7 +217,7 @@ const styles = StyleSheet.create({
     },
     moodImage: {
         width: '100%',
-        height: '100%',
+        height: '92%',
         borderRadius: 16,
     },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Feather } from '@expo/vector-icons'; // You can replace with Ionicons, MaterialIcons, etc.
+import { Feather } from '@expo/vector-icons';
+
 import HomeScreen from '../screens/Home/HomeScreen';
 import CardVaultScreen from '../screens/Vault/CardVaultScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
@@ -22,13 +23,9 @@ export default function TabNavigator() {
                 tabBarIcon: ({ focused, color, size }) => {
                     let iconName;
 
-                    if (route.name === 'Home') {
-                        iconName = 'home';
-                    } else if (route.name === 'Vault') {
-                        iconName = 'archive';
-                    } else if (route.name === 'Profile') {
-                        iconName = 'user';
-                    }
+                    if (route.name === 'Home') iconName = 'home';
+                    else if (route.name === 'Vault') iconName = 'archive';
+                    else if (route.name === 'Profile') iconName = 'user';
 
                     return <Feather name={iconName} size={size} color={color} />;
                 }
