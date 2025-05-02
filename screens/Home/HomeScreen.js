@@ -4,14 +4,21 @@ import {
     Text,
     StyleSheet,
     ActivityIndicator,
-    Image,
     FlatList,
     TouchableOpacity,
     Platform,
+    Dimensions,
+    Image,
 } from 'react-native';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+
 import { moodCards } from '../../data/moodCards';
+import TarotFlipCard from '../../components/TarotFlipCard';
+
+const screenWidth = Dimensions.get('window').width;
+const cardWidth = screenWidth / 2.3;
 
 export default function HomeScreen() {
     const [card, setCard] = useState(null);
@@ -19,7 +26,6 @@ export default function HomeScreen() {
     const [loading, setLoading] = useState(true);
     const navigation = useNavigation();
 
-    // 🔀 Shuffle moodCards once when component mounts
     const shuffledMoodCards = useMemo(() => {
         const shuffled = [...moodCards];
         for (let i = shuffled.length - 1; i > 0; i--) {
@@ -34,8 +40,10 @@ export default function HomeScreen() {
             try {
                 const storedCard = await AsyncStorage.getItem('todaysCard');
                 const storedMood = await AsyncStorage.getItem('selectedMood');
+
                 if (storedCard) setCard(JSON.parse(storedCard));
                 if (storedMood) setSelectedMood(JSON.parse(storedMood));
+
                 if (!storedCard) {
                     const random = moodCards[Math.floor(Math.random() * moodCards.length)];
                     setCard(random);
@@ -83,9 +91,7 @@ export default function HomeScreen() {
 
             {card && (
                 <View style={styles.cardContainer}>
-                    <Image source={card.image} style={styles.cardImage} resizeMode="contain" />
-                    <Text style={styles.cardName}>{card.name}</Text>
-                    <Text style={styles.cardMeaning}>{card.meaning}</Text>
+                    <TarotFlipCard card={card} />
                 </View>
             )}
 
@@ -96,22 +102,22 @@ export default function HomeScreen() {
                     keyExtractor={(item) => item.name}
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 16 }}
+                    contentContainerStyle={{ paddingHorizontal: 12 }}
                     snapToAlignment="center"
                     decelerationRate="fast"
-                    snapToInterval={Platform.OS === 'ios' ? 160 : 150}
+                    snapToInterval={cardWidth + 16}
                     renderItem={({ item }) => {
                         const isSelected = selectedMood?.name === item.name;
                         return (
                             <TouchableOpacity
-                                style={[styles.moodCard, isSelected && styles.moodCardSelected]}
+                                style={[
+                                    styles.moodCard,
+                                    { width: cardWidth },
+                                    isSelected && styles.moodCardSelected,
+                                ]}
                                 onPress={() => handleSelectMood(item)}
                             >
-                                <Image
-                                    source={item.image}
-                                    style={styles.moodImage}
-                                    resizeMode="contain"
-                                />
+                                <Image source={item.image} style={styles.moodImage} resizeMode="contain" />
                             </TouchableOpacity>
                         );
                     }}
@@ -143,37 +149,8 @@ const styles = StyleSheet.create({
         color: '#3d5149',
     },
     cardContainer: {
-        borderWidth: 2,
-        borderColor: '#dfbb66',
-        borderRadius: 20,
-        backgroundColor: '#fffef0',
-        padding: 24,
-        marginBottom: 32,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowOffset: { width: 0, height: 3 },
-        shadowRadius: 6,
-        elevation: 5,
-    },
-    cardImage: {
-        width: 140,
-        height: 140,
-        marginBottom: 16,
-    },
-    cardName: {
-        fontSize: 26,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        color: '#7da263',
-        marginBottom: 8,
-    },
-    cardMeaning: {
-        fontSize: 16,
-        fontWeight: '500',
-        textAlign: 'center',
-        color: '#3d5149',
-        marginBottom: 8,
+        marginBottom: 24,
     },
     loadingText: {
         marginTop: 10,
@@ -193,7 +170,6 @@ const styles = StyleSheet.create({
     },
     moodCard: {
         marginRight: 16,
-        width: 140,
         height: 160,
         borderRadius: 24,
         overflow: 'hidden',
