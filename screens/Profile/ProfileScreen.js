@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase/firebaseConfig';
 import { AuthContext } from '../../context/AuthContext';
-import Toast from 'react-native-toast-message'; // ✅ Add this
+import Toast from 'react-native-toast-message';
 
 export default function ProfileScreen() {
     const { user, setUser } = useContext(AuthContext);
@@ -26,7 +26,6 @@ export default function ProfileScreen() {
                                 text1: 'Signed out successfully 👋',
                                 position: 'top',
                                 visibilityTime: 2000,
-                                topOffset: 80
                             });
                         } catch (error) {
                             Toast.show({
@@ -35,7 +34,7 @@ export default function ProfileScreen() {
                                 text2: error.message,
                                 position: 'top',
                                 visibilityTime: 2500,
-                                topOffset: 80
+
                             });
                         }
                     },

@@ -1,5 +1,10 @@
-// App.js
 import React, { useContext, useEffect, useState } from 'react';
+import {
+    View,
+    Image,
+    ActivityIndicator,
+    StyleSheet,
+} from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -16,7 +21,7 @@ export default function App() {
         <AuthProvider>
             <NavigationContainer>
                 <AppWrapper />
-                <Toast config={toastConfig} position="top" />
+                <Toast config={toastConfig} position="top" topOffset={10} />
             </NavigationContainer>
         </AuthProvider>
     );
@@ -24,28 +29,53 @@ export default function App() {
 
 function AppWrapper() {
     const { user, authLoading } = useContext(AuthContext);
-    const [showOnboarding, setShowOnboarding] = useState(true);
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [checkingStorage, setCheckingStorage] = useState(true);
 
     useEffect(() => {
-        AsyncStorage.removeItem('hasSeenOnboarding'); // ← force it to show
         const checkOnboarding = async () => {
-            const seen = await AsyncStorage.getItem('hasSeenOnboarding');
-            if (seen === 'true') {
-                setShowOnboarding(false);
-            }
+            const seen = await AsyncStorage.getItem('onboardingCompleted');
+            setShowOnboarding(!seen);
+            setCheckingStorage(false);
         };
         checkOnboarding();
     }, []);
 
     const handleFinish = async () => {
-        await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+        await AsyncStorage.setItem('onboardingCompleted', 'true');
         setShowOnboarding(false);
     };
 
-    if (authLoading) return null;
+    if (authLoading || checkingStorage) {
+        return (
+            <View style={styles.splashContainer}>
+                <Image
+                    source={require('./assets/images/icon.png')}
+                    style={styles.splashLogo}
+                />
+                <ActivityIndicator size="large" color="#7da263" style={{ marginTop: 20 }} />
+            </View>
+        );
+    }
 
-    // ✅ Onboarding shown BEFORE login
-    if (showOnboarding) return <OnboardingScreen onFinish={handleFinish} />;
-    if (!user) return <LoginScreen />;
+    if (!user) {
+        if (showOnboarding) return <OnboardingScreen onFinish={handleFinish} />;
+        return <LoginScreen />;
+    }
+
     return <TabNavigator />;
 }
+
+const styles = StyleSheet.create({
+    splashContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FFF9D7',
+    },
+    splashLogo: {
+        width: 200,
+        height: 200,
+        resizeMode: 'contain',
+    },
+});
