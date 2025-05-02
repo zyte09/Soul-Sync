@@ -8,46 +8,65 @@ import {
     Easing,
 } from 'react-native';
 import { Audio } from 'expo-av';
+import { useIsFocused } from '@react-navigation/native';
 import { cardImages, cardBackImages } from '../data/cardImages';
 
 export default function TarotFlipCard({ card }) {
+    const isFocused = useIsFocused(); // 👈 Detect screen focus
     const flipAnim = useRef(new Animated.Value(0)).current;
     const timeoutRef = useRef(null);
-    const [isFlipped, setIsFlipped] = useState(false);
     const soundRef = useRef(null);
+    const [isFlipped, setIsFlipped] = useState(false);
 
+    // 🔊 Load sound once
     useEffect(() => {
+        let isMounted = true;
         const loadSound = async () => {
-            try {
-                const { sound } = await Audio.Sound.createAsync(
-                    require('../assets/sounds/flip.mp3')
-                );
-                soundRef.current = sound;
-            } catch (error) {
-                console.warn('❌ Error preloading sound:', error);
-            }
+            const { sound } = await Audio.Sound.createAsync(
+                require('../assets/sounds/flip.mp3'),
+                { shouldPlay: false }
+            );
+            if (isMounted) soundRef.current = sound;
         };
-
         loadSound();
 
         return () => {
-            if (soundRef.current) {
-                soundRef.current.unloadAsync(); // ✅ Clean up
-            }
+            isMounted = false;
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            if (soundRef.current) soundRef.current.unloadAsync();
         };
     }, []);
 
-    const playFlipSound = async () => {
-        try {
-            if (soundRef.current) {
-                await soundRef.current.replayAsync();
+    // 🧹 Stop sound + animation when screen loses focus
+    useEffect(() => {
+        if (!isFocused) {
+            // Stop animation
+            flipAnim.stopAnimation();
+            flipAnim.setValue(0); // reset to front
+            setIsFlipped(false);
+
+            // Clear timeout
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
             }
-        } catch (error) {
-            console.warn('❌ Error playing sound:', error);
+
+            // Stop sound
+            if (soundRef.current) {
+                soundRef.current.stopAsync();
+            }
+        }
+    }, [isFocused]);
+
+    const playFlipSound = async () => {
+        if (soundRef.current && isFocused) {
+            await soundRef.current.replayAsync();
         }
     };
 
     const flipToBack = () => {
+        if (!isFocused) return;
+
         playFlipSound();
         Animated.timing(flipAnim, {
             toValue: 1,
@@ -57,13 +76,13 @@ export default function TarotFlipCard({ card }) {
         }).start(() => {
             setIsFlipped(true);
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
-            timeoutRef.current = setTimeout(() => {
-                flipToFront();
-            }, 5000);
+            timeoutRef.current = setTimeout(() => flipToFront(), 5000);
         });
     };
 
     const flipToFront = () => {
+        if (!isFocused) return;
+
         playFlipSound();
         Animated.timing(flipAnim, {
             toValue: 0,
@@ -80,6 +99,7 @@ export default function TarotFlipCard({ card }) {
     };
 
     const handlePress = () => {
+        if (!isFocused) return;
         isFlipped ? flipToFront() : flipToBack();
     };
 

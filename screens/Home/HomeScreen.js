@@ -9,6 +9,7 @@ import {
     Platform,
     Dimensions,
     Image,
+    ScrollView,
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -80,6 +81,13 @@ export default function HomeScreen() {
         });
     };
 
+    const handleWriteNow = () => {
+        navigation.navigate('JournalEntryScreen', {
+            mood: null,
+            card: card,
+        });
+    };
+
     if (loading) {
         return (
             <View style={styles.centered}>
@@ -90,48 +98,67 @@ export default function HomeScreen() {
     }
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.header}>Today's Card</Text>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.container}>
+                <Text style={styles.header}>Today's Card</Text>
 
-            {card && (
-                <View style={styles.cardContainer}>
-                    <TarotFlipCard card={card} />
+                {card && (
+                    <View style={styles.cardContainer}>
+                        <TarotFlipCard card={card} />
+                    </View>
+                )}
+
+                <View style={styles.carouselSection}>
+                    <Text style={styles.sectionTitle}>How are you feeling today?</Text>
+
+                    <FlatList
+                        data={shuffledMoodCards}
+                        keyExtractor={(item) => item.name}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingHorizontal: 12 }}
+                        snapToAlignment="center"
+                        decelerationRate="fast"
+                        snapToInterval={cardWidth + 16}
+                        renderItem={({ item }) => {
+                            const isSelected = selectedMood?.name === item.name;
+                            return (
+                                <TouchableOpacity
+                                    style={[
+                                        styles.moodCard,
+                                        { width: cardWidth },
+                                        isSelected && styles.moodCardSelected,
+                                    ]}
+                                    onPress={() => handleSelectMood(item)}
+                                >
+                                    <Image
+                                        source={item.image}
+                                        style={styles.moodImage}
+                                        resizeMode="contain"
+                                    />
+                                </TouchableOpacity>
+                            );
+                        }}
+                    />
                 </View>
-            )}
 
-            <View style={styles.carouselSection}>
-                <Text style={styles.sectionTitle}>How are you feeling today?</Text>
-                <FlatList
-                    data={shuffledMoodCards}
-                    keyExtractor={(item) => item.name}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 12 }}
-                    snapToAlignment="center"
-                    decelerationRate="fast"
-                    snapToInterval={cardWidth + 16}
-                    renderItem={({ item }) => {
-                        const isSelected = selectedMood?.name === item.name;
-                        return (
-                            <TouchableOpacity
-                                style={[
-                                    styles.moodCard,
-                                    { width: cardWidth },
-                                    isSelected && styles.moodCardSelected,
-                                ]}
-                                onPress={() => handleSelectMood(item)}
-                            >
-                                <Image source={item.image} style={styles.moodImage} resizeMode="contain" />
-                            </TouchableOpacity>
-                        );
-                    }}
-                />
+                {/* Journal Section */}
+                <View style={styles.journalSection}>
+                    <Text style={styles.journalLabel}>Journal</Text>
+                    <TouchableOpacity style={styles.writeNowButton} onPress={handleWriteNow}>
+                        <Text style={styles.writeNowText}>📝 Write Now</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
-        </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
+    scrollContainer: {
+        paddingBottom: 40,
+        backgroundColor: '#FFF9D7',
+    },
     container: {
         flex: 1,
         padding: 24,
@@ -163,7 +190,6 @@ const styles = StyleSheet.create({
     },
     carouselSection: {
         marginTop: 12,
-        marginBottom: 40,
     },
     sectionTitle: {
         fontSize: 18,
@@ -199,5 +225,31 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '92%',
         borderRadius: 16,
+    },
+    journalSection: {
+        alignItems: 'center',
+        marginTop: 28,
+    },
+    journalLabel: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#3d5149',
+        marginBottom: 10,
+    },
+    writeNowButton: {
+        backgroundColor: '#7da263',
+        paddingVertical: 12,
+        paddingHorizontal: 28,
+        borderRadius: 32,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 4,
+    },
+    writeNowText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });

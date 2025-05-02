@@ -5,6 +5,7 @@ import {
     TextInput,
     StyleSheet,
     TouchableOpacity,
+    Vibration,
 } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { saveMoodEntry } from '../../firebase/saveEntry';
@@ -13,21 +14,39 @@ const JournalEntryScreen = ({ route, navigation }) => {
     const { mood, card } = route.params;
     const { user } = useContext(AuthContext);
     const [journalText, setJournalText] = useState('');
+    const [showModal, setShowModal] = useState(false);
+
+    const isFreeWrite = !mood;
 
     const handleSave = async () => {
         if (!user) return;
 
         await saveMoodEntry(user, mood, card, journalText);
 
-        navigation.navigate('Main', {
-            screen: 'Vault',
-        });
+        Vibration.vibrate(100); // ✅ trigger success vibration
+        setShowModal(true);
+
+        setTimeout(() => {
+            setShowModal(false);
+            navigation.navigate('Main', { screen: 'Vault' });
+        }, 2000);
     };
 
     return (
         <View style={styles.container}>
-            <Text style={[styles.moodName, { color: '#7da263' }]}>{mood?.name}</Text>
-            <Text style={styles.moodDescription}>{mood?.meaning}</Text>
+            <Text
+                style={[
+                    styles.titleText,
+                    { color: '#7da263' },
+                    isFreeWrite && styles.journalTitleSpacing,
+                ]}
+            >
+                {isFreeWrite ? 'Journal' : mood.name}
+            </Text>
+
+            {!isFreeWrite && (
+                <Text style={styles.moodDescription}>{mood.meaning}</Text>
+            )}
 
             <TextInput
                 style={styles.input}
@@ -45,10 +64,20 @@ const JournalEntryScreen = ({ route, navigation }) => {
             <Text style={styles.quote}>
                 “Even the softest emotions deserve to be heard.”
             </Text>
-
-            <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'Vault' })}>
+            <TouchableOpacity
+                onPress={() => navigation.navigate('Main', { screen: 'Vault' })}
+            >
                 <Text style={styles.viewEntries}>View Entries →</Text>
             </TouchableOpacity>
+
+            {showModal && (
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalBox}>
+                        <Text style={styles.modalEmoji}>✅</Text>
+                        <Text style={styles.modalText}>Entry Saved!</Text>
+                    </View>
+                </View>
+            )}
         </View>
     );
 };
@@ -59,11 +88,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFF9D7',
         padding: 24,
     },
-    moodName: {
+    titleText: {
         fontSize: 24,
         fontWeight: 'bold',
         textAlign: 'center',
-        marginBottom: 6,
+    },
+    journalTitleSpacing: {
+        marginBottom: 20,
     },
     moodDescription: {
         fontSize: 15,
@@ -109,6 +140,39 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#5b8f4b',
         fontWeight: 'bold',
+    },
+    modalOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 999,
+    },
+    modalBox: {
+        backgroundColor: '#FFFDF0',
+        padding: 24,
+        borderRadius: 20,
+        width: '75%',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: 6,
+        elevation: 6,
+    },
+    modalEmoji: {
+        fontSize: 36,
+        marginBottom: 10,
+    },
+    modalText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#3d5149',
+        textAlign: 'center',
     },
 });
 

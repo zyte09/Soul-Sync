@@ -139,7 +139,7 @@ const CardVaultScreen = () => {
     };
 
     const renderItem = ({ item }) => {
-        const moodName = item.mood?.name || 'Unknown Mood';
+        const moodName = item.mood?.name || '✨ Mindful Moment';
         const cardName = item.card?.name || '';
         const journal = item.journal || '';
         const date = item.timestamp?.toDate().toLocaleDateString() || 'No Date';
