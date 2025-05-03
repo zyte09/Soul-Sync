@@ -37,6 +37,14 @@ export default function TarotFlipCard({ card }) {
         };
     }, []);
 
+    useEffect(() => {
+        if (card) {
+            console.log("🃏 TarotFlipCard received card:", card);
+            console.log("🖼️ Front image loaded:", cardImages[card.name]);
+            console.log("🖼️ Back image loaded:", cardBackImages[card.name]);
+        }
+    }, [card]);
+
     // 🧹 Stop sound + animation when screen loses focus
     useEffect(() => {
         if (!isFocused) {

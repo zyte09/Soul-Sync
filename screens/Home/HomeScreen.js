@@ -14,8 +14,11 @@ import {
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase/firebaseConfig'; // 🔁 Adjust path if needed
 
 import { moodCards } from '../../data/moodCards';
+import { cardImages } from '../../data/cardImages'; // ✅ Needed for filtering Firestore cards
 import TarotFlipCard from '../../components/TarotFlipCard';
 
 const screenWidth = Dimensions.get('window').width;
@@ -52,23 +55,43 @@ export default function HomeScreen() {
     }, []);
 
     useEffect(() => {
+        AsyncStorage.removeItem('todaysCard');
         const loadData = async () => {
             try {
                 const storedCard = await AsyncStorage.getItem('todaysCard');
                 const storedMood = await AsyncStorage.getItem('selectedMood');
                 const storedHistory = await AsyncStorage.getItem('moodHistory');
 
-                if (storedCard) setCard(JSON.parse(storedCard));
                 if (storedMood) setSelectedMood(JSON.parse(storedMood));
                 if (storedHistory) setMoodHistory(JSON.parse(storedHistory));
 
-                if (!storedCard) {
-                    const random = moodCards[Math.floor(Math.random() * moodCards.length)];
+                if (storedCard) {
+                    const parsedCard = JSON.parse(storedCard);
+                    setCard(parsedCard);
+                    console.log("🔮 Today's Card (from storage):", parsedCard);
+                } else {
+                    const querySnapshot = await getDocs(collection(db, 'cards'));
+                    const validCards = [];
+
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        if (cardImages[data.name]) {
+                            validCards.push(data);
+                        }
+                    });
+
+                    if (validCards.length === 0) {
+                        console.warn("⚠️ No tarot cards found with matching images.");
+                        return;
+                    }
+
+                    const random = validCards[Math.floor(Math.random() * validCards.length)];
                     setCard(random);
                     await AsyncStorage.setItem('todaysCard', JSON.stringify(random));
+                    console.log("🆕 Today's Card (from Firestore):", random);
                 }
             } catch (error) {
-                console.error('Error loading data:', error);
+                console.error('❌ Error loading data:', error);
             } finally {
                 setLoading(false);
             }
@@ -216,7 +239,6 @@ const styles = StyleSheet.create({
     carouselSection: {
         marginTop: 12,
         marginBottom: 24,
-
     },
     moodCard: {
         marginRight: 16,
