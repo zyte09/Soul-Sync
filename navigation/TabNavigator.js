@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import HomeScreen from '../screens/Home/HomeScreen';
 import CardVaultScreen from '../screens/Vault/CardVaultScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
+import CalendarScreen from '../screens/Calendar/CalendarScreen'; // 🆕 import your new screen
 
 const Tab = createBottomTabNavigator();
 
@@ -28,6 +29,7 @@ export default function TabNavigator() {
 
                     if (route.name === 'Home') iconName = 'home';
                     else if (route.name === 'Vault') iconName = 'archive';
+                    else if (route.name === 'Calendar') iconName = 'calendar'; // 🆕
                     else if (route.name === 'Profile') iconName = 'user';
 
                     return <Feather name={iconName} size={size} color={color} />;
@@ -36,6 +38,7 @@ export default function TabNavigator() {
         >
             <Tab.Screen name="Home" component={HomeScreen} />
             <Tab.Screen name="Vault" component={CardVaultScreen} />
+            <Tab.Screen name="Calendar" component={CalendarScreen} />
             <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
     );

@@ -14,12 +14,13 @@ import {
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../firebase/firebaseConfig'; // 🔁 Adjust path if needed
+import { doc, getDoc, getDocs, setDoc, collection } from 'firebase/firestore';
+import { db } from '../../firebase/firebaseConfig';
 
 import { moodCards } from '../../data/moodCards';
-import { cardImages } from '../../data/cardImages'; // ✅ Needed for filtering Firestore cards
+import { cardImages } from '../../data/cardImages';
 import TarotFlipCard from '../../components/TarotFlipCard';
+import { useAuth } from '../../context/AuthContext';
 
 const screenWidth = Dimensions.get('window').width;
 const cardWidth = screenWidth / 2.3;
@@ -44,6 +45,7 @@ export default function HomeScreen() {
     const [loading, setLoading] = useState(true);
     const [moodHistory, setMoodHistory] = useState([]);
     const navigation = useNavigation();
+    const { user } = useAuth();
 
     const shuffledMoodCards = useMemo(() => {
         const shuffled = [...moodCards];
@@ -55,30 +57,53 @@ export default function HomeScreen() {
     }, []);
 
     useEffect(() => {
-        AsyncStorage.removeItem('todaysCard');
         const loadData = async () => {
             try {
-                const storedCard = await AsyncStorage.getItem('todaysCard');
                 const storedMood = await AsyncStorage.getItem('selectedMood');
                 const storedHistory = await AsyncStorage.getItem('moodHistory');
-
                 if (storedMood) setSelectedMood(JSON.parse(storedMood));
                 if (storedHistory) setMoodHistory(JSON.parse(storedHistory));
 
-                if (storedCard) {
-                    const parsedCard = JSON.parse(storedCard);
-                    setCard(parsedCard);
-                    console.log("🔮 Today's Card (from storage):", parsedCard);
+                const today = new Date().toISOString().split('T')[0];
+                const cardRef = doc(db, 'users', user.uid, 'dailyCard', today);
+                const existing = await getDoc(cardRef);
+
+                if (existing.exists()) {
+                    const data = existing.data();
+                    const cardData = {
+                        name: data.name,
+                        meaning: data.meaning,
+                        Description: data.description,
+                    };
+                    setCard(cardData);
+                    await AsyncStorage.setItem('todaysCard', JSON.stringify(cardData));
+                    console.log("📥 Loaded today's card from Firestore:", cardData);
                 } else {
                     const querySnapshot = await getDocs(collection(db, 'cards'));
                     const validCards = [];
+                    const skippedCards = [];
 
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        if (cardImages[data.name]) {
-                            validCards.push(data);
+                    querySnapshot.forEach((docSnap) => {
+                        const data = docSnap.data();
+                        const originalName = data.name;
+                        const normalizedKey = originalName.replace(/^The\s+/i, '').trim();
+
+                        if (cardImages[normalizedKey]) {
+                            console.log(`✅ Found image for: ${originalName} (key: ${normalizedKey})`);
+                            validCards.push({
+                                name: originalName,
+                                meaning: data.meaning,
+                                Description: data.description,
+                            });
+                        } else {
+                            console.warn(`🛑 Missing image for: ${originalName} (key: ${normalizedKey})`);
+                            skippedCards.push(originalName);
                         }
                     });
+
+                    console.log(`🔍 Total cards in Firestore: ${querySnapshot.size}`);
+                    console.log(`🎴 Valid cards: ${validCards.length}`);
+                    console.log(`🚫 Skipped cards:`, skippedCards);
 
                     if (validCards.length === 0) {
                         console.warn("⚠️ No tarot cards found with matching images.");
@@ -88,17 +113,24 @@ export default function HomeScreen() {
                     const random = validCards[Math.floor(Math.random() * validCards.length)];
                     setCard(random);
                     await AsyncStorage.setItem('todaysCard', JSON.stringify(random));
-                    console.log("🆕 Today's Card (from Firestore):", random);
+
+                    await setDoc(cardRef, {
+                        name: random.name,
+                        meaning: random.meaning,
+                        description: random.Description || random.description || '',
+                        savedAt: new Date(),
+                    });
+                    console.log("🆕 New card saved to Firestore:", random);
                 }
-            } catch (error) {
-                console.error('❌ Error loading data:', error);
+            } catch (err) {
+                console.error("❌ Error loading today's card:", err);
             } finally {
                 setLoading(false);
             }
         };
 
         loadData();
-    }, []);
+    }, [user]);
 
     const handleSelectMood = async (mood) => {
         setSelectedMood(mood);
@@ -106,8 +138,8 @@ export default function HomeScreen() {
 
         const today = new Date().toISOString().split('T')[0];
         const entry = { name: mood.name, date: today };
-
         const alreadyLogged = moodHistory.find((m) => m.date === today);
+
         if (!alreadyLogged) {
             const updated = [entry, ...moodHistory];
             setMoodHistory(updated);
@@ -136,7 +168,7 @@ export default function HomeScreen() {
         return (
             <View style={styles.centered}>
                 <ActivityIndicator size="large" color="#7da263" />
-                <Text style={styles.loadingText}>Shuffling cards...</Text>
+                <Text style={styles.loadingText}>Loading today's card...</Text>
             </View>
         );
     }
@@ -146,7 +178,6 @@ export default function HomeScreen() {
             <View style={styles.container}>
                 <Text style={styles.header}>Today's Card</Text>
                 {card && <View style={styles.cardContainer}><TarotFlipCard card={card} /></View>}
-
                 <Text style={styles.quote}>{quote}</Text>
 
                 <View style={styles.carouselSection}>
@@ -302,7 +333,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowRadius: 4,
         padding: 16,
-        opacity: 1,
     },
     promptLabel: {
         fontSize: 16,

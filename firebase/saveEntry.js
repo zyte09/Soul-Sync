@@ -6,11 +6,14 @@ export const saveMoodEntry = async (user, mood, card, journalText) => {
     if (!user) return;
 
     try {
+        const dateString = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+
         const entriesRef = collection(db, 'users', user.uid, 'entries');
         await addDoc(entriesRef, {
             mood,
             card,
             journal: journalText || '',
+            date: dateString,
             timestamp: serverTimestamp(),
         });
 
