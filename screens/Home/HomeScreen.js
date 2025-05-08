@@ -164,6 +164,23 @@ export default function HomeScreen() {
         return diff <= 7;
     });
 
+    const moodEmojis = {
+        Happy: '😊', Sad: '😢', Angry: '😡', Love: '❤️', Disgust: '🤢',
+        Joy: '😁', Peace: '🕊️', Amusement: '😄', Wanderlust: '🌍', Acceptance: '🤗',
+        Desire: '🔥', Sorrow: '😭', Compassion: '💗', Hysteria: '😵', Envy: '😒',
+        Contentment: '😌', Hatred: '💢', Distress: '😖', Boredom: '🥱', Awe: '😲',
+        SelfPity: '😞', Adoration: '😍', Anger: '😠', Echo: '📢'
+    };
+
+    const moodFrequency = {};
+    weeklyEntries.forEach(entry => {
+        const moodName = typeof entry.name === 'string' ? entry.name : entry.name?.name || 'Unknown';
+        moodFrequency[moodName] = (moodFrequency[moodName] || 0) + 1;
+    });
+
+    const mostCommonMood = Object.entries(moodFrequency).sort((a, b) => b[1] - a[1])[0];
+
+
     if (loading) {
         return (
             <View style={styles.centered}>
@@ -218,9 +235,16 @@ export default function HomeScreen() {
                 </View>
 
                 <View style={styles.summarySection}>
-                    <Text style={styles.summaryTitle}>This Week’s Mood Summary</Text>
-                    <Text style={styles.summaryText}>📅 {weeklyEntries.length} entries logged this week</Text>
+                    <Text style={styles.summaryTitle}>This Week’s Most Felt Emotion</Text>
+                    {mostCommonMood ? (
+                        <Text style={styles.summaryText}>
+                            {moodEmojis[mostCommonMood[0]] || '🌟'} {mostCommonMood[0]} ({mostCommonMood[1]}x this week)
+                        </Text>
+                    ) : (
+                        <Text style={styles.summaryText}>No mood logged yet this week.</Text>
+                    )}
                 </View>
+
             </View>
         </ScrollView>
     );

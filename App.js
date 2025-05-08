@@ -12,11 +12,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import TabNavigator from './navigation/TabNavigator';
 import OnboardingScreen from './screens/Onboarding/OnboardingScreen';
 import LoginScreen from './screens/Auth/LoginScreen';
-
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './utils/toastConfig';
 
+import ForgotPasswordScreen from './screens/Profile/ForgotPasswordScreen';
+import AboutUsScreen from './screens/Profile/AboutUsScreen';
 import MoodSelectionScreen from './screens/Home/MoodSelectionScreen';
 import JournalEntryScreen from './screens/Home/JournalEntryScreen';
 
@@ -64,11 +65,45 @@ function AppWrapper() {
         );
     }
 
+    // 🔒 Not logged in (Onboarding/Login stack)
     if (!user) {
-        if (showOnboarding) return <OnboardingScreen onFinish={handleFinish} />;
-        return <LoginScreen />;
+        return (
+            <Stack.Navigator>
+                {showOnboarding ? (
+                    <Stack.Screen
+                        name="Onboarding"
+                        options={{ headerShown: false }}
+                        children={() => <OnboardingScreen onFinish={handleFinish} />}
+                    />
+                ) : (
+                    <>
+                        <Stack.Screen
+                            name="Login"
+                            component={LoginScreen}
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name="ForgotPassword"
+                            component={ForgotPasswordScreen}
+                            options={{
+                                title: 'Forgot Password',
+                                headerShown: true,
+                                headerStyle: { backgroundColor: '#FFF9D7' },
+                                headerTitleStyle: {
+                                    fontWeight: 'bold',
+                                    fontSize: 18,
+                                    color: '#3d5149',
+                                },
+                                headerTintColor: '#3d5149',
+                            }}
+                        />
+                    </>
+                )}
+            </Stack.Navigator>
+        );
     }
 
+    // ✅ Logged in (Main app stack)
     return (
         <Stack.Navigator>
             <Stack.Screen
@@ -86,6 +121,35 @@ function AppWrapper() {
                 component={JournalEntryScreen}
                 options={{
                     title: '📝 Write About It',
+                    headerStyle: { backgroundColor: '#FFF9D7' },
+                    headerTitleStyle: {
+                        fontWeight: 'bold',
+                        fontSize: 18,
+                        color: '#3d5149',
+                    },
+                    headerTintColor: '#3d5149',
+                }}
+            />
+            <Stack.Screen
+                name="ForgotPassword"
+                component={ForgotPasswordScreen}
+                options={{
+                    title: 'Forgot Password',
+                    headerShown: true,
+                    headerStyle: { backgroundColor: '#FFF9D7' },
+                    headerTitleStyle: {
+                        fontWeight: 'bold',
+                        fontSize: 18,
+                        color: '#3d5149',
+                    },
+                    headerTintColor: '#3d5149',
+                }}
+            />
+            <Stack.Screen
+                name="AboutUs"
+                component={AboutUsScreen}
+                options={{
+                    title: 'About Us',
                     headerStyle: { backgroundColor: '#FFF9D7' },
                     headerTitleStyle: {
                         fontWeight: 'bold',
