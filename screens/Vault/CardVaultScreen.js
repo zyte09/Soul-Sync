@@ -154,12 +154,17 @@ const CardVaultScreen = () => {
 
     const filteredEntries = entries.filter((entry) => {
         const query = searchQuery.toLowerCase();
+        const moodName = entry.mood?.name || 'Mindful Moment';
+        const cardName = entry.card?.name || '';
+        const journalText = entry.journal || '';
+
         return (
-            entry.journal?.toLowerCase().includes(query) ||
-            entry.mood?.name?.toLowerCase().includes(query) ||
-            entry.card?.name?.toLowerCase().includes(query)
+            moodName.toLowerCase().includes(query) ||
+            cardName.toLowerCase().includes(query) ||
+            journalText.toLowerCase().includes(query)
         );
     });
+
 
     const renderItem = ({ item }) => {
         const moodName = item.mood?.name || '✨ Mindful Moment';
@@ -330,7 +335,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         fontSize: 15,
         color: '#3d5149',
-        paddingRight: 36, // space for the X icon
+        paddingRight: 36,
     },
     clearIcon: {
         position: 'absolute',

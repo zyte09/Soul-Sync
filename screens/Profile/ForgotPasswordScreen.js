@@ -1,22 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
-    View,
     Text,
     TextInput,
     TouchableOpacity,
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
+    Image,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../firebase/firebaseConfig';
 import Toast from 'react-native-toast-message';
+import { AuthContext } from '../../context/AuthContext';
 
 export default function ForgotPasswordScreen() {
-    const navigation = useNavigation();
+    const { user } = useContext(AuthContext);
     const [email, setEmail] = useState('');
+
+    useEffect(() => {
+        if (user?.email) {
+            setEmail(user.email);
+        }
+    }, [user]);
 
     const handleReset = async () => {
         if (!email) {
@@ -41,6 +46,11 @@ export default function ForgotPasswordScreen() {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
+            <Image
+                source={require('../../assets/images/icon.png')}
+                style={styles.logo}
+                resizeMode="contain"
+            />
 
             <Text style={styles.title}>Reset your password</Text>
 
@@ -68,19 +78,12 @@ const styles = StyleSheet.create({
         padding: 30,
         justifyContent: 'center',
     },
-    backButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-        position: 'absolute',
-        top: 50,
-        left: 20,
-    },
-    backText: {
-        marginLeft: 6,
-        fontSize: 16,
-        color: '#3d5149',
-        fontWeight: '600',
+    logo: {
+        width: 200,
+        height: 200,
+        alignSelf: 'center',
+        marginBottom: -20,
+        marginTop: -40,
     },
     title: {
         fontSize: 20,
@@ -88,7 +91,6 @@ const styles = StyleSheet.create({
         color: '#3d5149',
         marginBottom: 24,
         textAlign: 'center',
-        marginTop: 60,
     },
     input: {
         backgroundColor: '#fff',

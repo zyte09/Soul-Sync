@@ -29,7 +29,7 @@ export default function ProfileScreen() {
     const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
     const [photoOptionsVisible, setPhotoOptionsVisible] = useState(false);
-
+    const [updating, setUpdating] = useState(false);
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -156,28 +156,47 @@ export default function ProfileScreen() {
             Toast.show({ type: 'error', text1: 'Please fill all fields' });
             return;
         }
+
         if (newPassword !== confirmPassword) {
             Toast.show({ type: 'error', text1: 'Passwords do not match' });
             return;
         }
+
         if (newPassword.length < 6) {
             Toast.show({ type: 'error', text1: 'Password too short (min 6 chars)' });
             return;
         }
 
+        if (oldPassword === newPassword) {
+            Toast.show({ type: 'error', text1: 'New password must be different' });
+            return;
+        }
+
+        setUpdating(true); // ⏳ Start loading
+
         try {
             const credential = EmailAuthProvider.credential(user.email, oldPassword);
             await reauthenticateWithCredential(auth.currentUser, credential);
             await updatePassword(auth.currentUser, newPassword);
+
             Toast.show({ type: 'success', text1: 'Password updated successfully' });
             setModalVisible(false);
             setOldPassword('');
             setNewPassword('');
             setConfirmPassword('');
         } catch (error) {
-            Toast.show({ type: 'error', text1: 'Update failed', text2: error.message });
+            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                Toast.show({ type: 'error', text1: 'Incorrect current password' });
+            } else {
+                Toast.show({ type: 'error', text1: 'Update failed', text2: error.message });
+            }
+        } finally {
+            setUpdating(false); // ✅ Stop loading
         }
     };
+
+
+
 
     return (
         <View style={styles.container}>
@@ -321,16 +340,28 @@ export default function ProfileScreen() {
                     ))}
 
                     <View style={styles.modalButtons}>
-                        <TouchableOpacity style={styles.modalBtn} onPress={handlePasswordChange}>
-                            <Text style={styles.modalBtnText}>Update</Text>
+                        <TouchableOpacity
+                            style={[styles.modalBtn, updating && { opacity: 0.7 }]}
+                            onPress={handlePasswordChange}
+                            disabled={updating}
+                        >
+                            {updating ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={styles.modalBtnText}>Update</Text>
+                            )}
                         </TouchableOpacity>
+
                         <TouchableOpacity
                             style={[styles.modalBtn, { backgroundColor: '#bbb' }]}
                             onPress={() => setModalVisible(false)}
+                            disabled={updating} // optional: prevent cancel while loading
                         >
                             <Text style={styles.modalBtnText}>Cancel</Text>
                         </TouchableOpacity>
                     </View>
+
+
                 </View>
                 <Toast config={toastConfig} position="top" topOffset={10} />
             </View>

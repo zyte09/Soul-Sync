@@ -59,8 +59,8 @@ export default function HomeScreen() {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const storedMood = await AsyncStorage.getItem('selectedMood');
-                const storedHistory = await AsyncStorage.getItem('moodHistory');
+                const storedMood = await AsyncStorage.getItem(`selectedMood_${user.uid}`);
+                const storedHistory = await AsyncStorage.getItem(`moodHistory_${user.uid}`);
                 if (storedMood) setSelectedMood(JSON.parse(storedMood));
                 if (storedHistory) setMoodHistory(JSON.parse(storedHistory));
 
@@ -134,7 +134,7 @@ export default function HomeScreen() {
 
     const handleSelectMood = async (mood) => {
         setSelectedMood(mood);
-        await AsyncStorage.setItem('selectedMood', JSON.stringify(mood));
+        await AsyncStorage.setItem(`selectedMood_${user.uid}`, JSON.stringify(mood));
 
         const today = new Date().toISOString().split('T')[0];
         const entry = { name: mood.name, date: today };
@@ -143,7 +143,7 @@ export default function HomeScreen() {
         if (!alreadyLogged) {
             const updated = [entry, ...moodHistory];
             setMoodHistory(updated);
-            await AsyncStorage.setItem('moodHistory', JSON.stringify(updated));
+            await AsyncStorage.setItem(`moodHistory_${user.uid}`, JSON.stringify(updated));
         }
 
         navigation.navigate('JournalEntryScreen', { mood, card });
