@@ -19,8 +19,8 @@ import { AuthContext } from '../../context/AuthContext';
 import Toast from 'react-native-toast-message';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-
-const PROFILE_IMAGE_KEY = 'PROFILE_IMAGE_URI';
+import { toastConfig } from '../../utils/toastConfig';
+const getImageKey = (uid) => `PROFILE_IMAGE_URI_${uid}`;
 
 export default function ProfileScreen() {
     const { user, setUser } = useContext(AuthContext);
@@ -43,7 +43,8 @@ export default function ProfileScreen() {
 
     const loadImageFromStorage = async () => {
         try {
-            const uri = await AsyncStorage.getItem(PROFILE_IMAGE_KEY);
+            const key = getImageKey(user.uid);
+            const uri = await AsyncStorage.getItem(key);
             if (uri) setProfileImage(uri);
         } catch (err) {
             console.error('Failed to load image', err);
@@ -57,9 +58,10 @@ export default function ProfileScreen() {
             setLoading(true);
             const filename = uri.split('/').pop();
             const newPath = FileSystem.documentDirectory + filename;
-
             await FileSystem.copyAsync({ from: uri, to: newPath });
-            await AsyncStorage.setItem(PROFILE_IMAGE_KEY, newPath);
+
+            const key = getImageKey(user.uid);
+            await AsyncStorage.setItem(key, newPath);
 
             setProfileImage(newPath);
             Toast.show({ type: 'success', text1: 'Profile photo updated!' });
@@ -74,7 +76,8 @@ export default function ProfileScreen() {
     const removeProfilePhoto = async () => {
         try {
             setLoading(true);
-            await AsyncStorage.removeItem(PROFILE_IMAGE_KEY);
+            const key = getImageKey(user.uid);
+            await AsyncStorage.removeItem(key);
             setProfileImage(null);
             Toast.show({ type: 'success', text1: 'Profile photo removed' });
         } catch (err) {
@@ -83,7 +86,6 @@ export default function ProfileScreen() {
             setLoading(false);
         }
     };
-
 
     const launchCamera = async () => {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -220,7 +222,7 @@ export default function ProfileScreen() {
                             <Feather
                                 name={showOld ? 'eye' : 'eye-off'}
                                 size={20}
-                                color="#555"
+                                color="#5A4FCF"
                                 style={styles.eyeIcon}
                                 onPress={() => setShowOld(!showOld)}
                             />
@@ -239,7 +241,7 @@ export default function ProfileScreen() {
                             <Feather
                                 name={showNew ? 'eye' : 'eye-off'}
                                 size={20}
-                                color="#555"
+                                color="#5A4FCF"
                                 style={styles.eyeIcon}
                                 onPress={() => setShowNew(!showNew)}
                             />
@@ -258,7 +260,7 @@ export default function ProfileScreen() {
                             <Feather
                                 name={showConfirm ? 'eye' : 'eye-off'}
                                 size={20}
-                                color="#555"
+                                color="#5A4FCF"
                                 style={styles.eyeIcon}
                                 onPress={() => setShowConfirm(!showConfirm)}
                             />
@@ -330,6 +332,7 @@ export default function ProfileScreen() {
                         </TouchableOpacity>
                     </View>
                 </View>
+                <Toast config={toastConfig} position="top" topOffset={10} />
             </View>
         </Modal>
             <Modal
